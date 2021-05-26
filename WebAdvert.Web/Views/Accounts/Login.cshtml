@@ -32,14 +32,22 @@
                 <div class="checkbox">
                     <label asp-for="RememberMe"></label>
                     <input asp-for="RememberMe" />
-                    
+
                 </div>
-                
+
 
             </div>
 
             <button type="submit" class="btn btn-dark">LogIn</button>
+
         </form>
+
+        <h6>
+            <a asp_controller="Accounts" asp-action="ForgotPassword">
+                If you forgot password, click here to reset it
+            </a>
+        </h6>
+
     </div>
 
 

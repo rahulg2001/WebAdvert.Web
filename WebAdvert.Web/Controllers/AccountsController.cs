@@ -13,6 +13,9 @@ namespace WebAdvert.Web.Controllers
 {
     public class AccountsController : Controller
     {
+        //Documentation 
+        //https://github.com/aws/aws-aspnet-cognito-identity-provider/blob/master/docs/5-User%20Management%20-%20Change%20and%20reset%20passwords.md
+
         private readonly SignInManager<CognitoUser> _signInManager;
         private readonly UserManager<CognitoUser> _userManager;
         private readonly CognitoUserPool _userPool;
@@ -40,10 +43,10 @@ namespace WebAdvert.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Signup(SignupModel model)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 var user = this._userPool.GetUser(model.Email);
-                if(user.Status != null)
+                if (user.Status != null)
                 {
                     ModelState.AddModelError("UserExists", "User with this email already exists");
                     return View(model);
@@ -68,12 +71,12 @@ namespace WebAdvert.Web.Controllers
             return View(model);
         }
 
-/*        public IActionResult Confirm()
-        {
-            var model = new ConfirmModel();
-            return View(model);
-        }
-*/
+        /*        public IActionResult Confirm()
+                {
+                    var model = new ConfirmModel();
+                    return View(model);
+                }
+        */
         [HttpPost]
         [ActionName("Confirm")]
         public async Task<IActionResult> ConfirmPost(ConfirmModel model)
@@ -96,7 +99,7 @@ namespace WebAdvert.Web.Controllers
                         return RedirectToAction("Index", "Home");
                     }
                     {
-                        foreach(var item in result.Errors)
+                        foreach (var item in result.Errors)
                         {
                             ModelState.AddModelError(item.Code, item.Description);
                         }
@@ -126,12 +129,82 @@ namespace WebAdvert.Web.Controllers
                 }
                 else
                 {
-                        ModelState.AddModelError("Login error", "Email and password no not match");
+                    ModelState.AddModelError("Login error", "Email and password no not match");
                 }
 
 
             }
             return View("Login", model);
+        }
+
+        public IActionResult ForgotPassword(ForgotPasswordModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        [ActionName("ForgotPassword")]
+        public async Task<IActionResult> ForgotPasswordPost(ForgotPasswordModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await this._userManager.FindByEmailAsync(model.Email);//.ConfigureAwait(false);
+                if (user == null)
+                {
+                    ModelState.AddModelError("UserExists", "User with this email not found");
+                    return View(model);
+                }
+                else
+                {
+
+                    //var result = await _userManager.ConfirmEmailAsync(user, model.Code);
+                    var result = await (_userManager as CognitoUserManager<CognitoUser>).ResetPasswordAsync(user);
+                    if (result.Succeeded)
+                    {
+                        return RedirectToAction("ConfirmAfterForgotPassword");
+                    }
+                }
+            }
+            return View();
+        }
+
+        public IActionResult ConfirmAfterForgotPassword(ConfirmAfterForgotPasswordModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        [ActionName("ConfirmAfterForgotPassword")]
+        public async Task<IActionResult> ConfirmAfterForgotPasswordPost(ConfirmAfterForgotPasswordModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await this._userManager.FindByEmailAsync(model.Email);//.ConfigureAwait(false);
+                if (user == null)
+                {
+                    ModelState.AddModelError("UserExists", "User with this email not found");
+                    return View(model);
+                }
+                else
+                {
+
+                    //var result = await _userManager.ConfirmEmailAsync(user, model.Code);
+                    var result = await (_userManager as CognitoUserManager<CognitoUser>).ResetPasswordAsync(user, model.Code, model.Password );
+                    if (result.Succeeded)
+                    {
+                        return RedirectToAction("Login");
+
+                    }
+                    {
+                        foreach (var item in result.Errors)
+                        {
+                            ModelState.AddModelError(item.Code, item.Description);
+                        }
+                        return View(model);
+                    }
+                }
+            }
+            return View();
         }
 
     }
