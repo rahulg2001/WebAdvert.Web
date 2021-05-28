@@ -20,5 +20,14 @@ namespace WebAdvert.Web.Models.Accounts
         [Compare("Password", ErrorMessage = "password and its confirmation not matching")]
         [Display(Name = "Confirm Password")]
         public string ConfirmPassword { get; set; }
+
+        [Display(Name = "Enable 2FA")]
+        public bool Enable2FA { get; set; }
+
+        [Required]
+        [DataType(DataType.PhoneNumber)]
+        [StringLength(20, ErrorMessage = "valid PhoneNumber required")]
+        [Display(Name = "PhoneNumber")]
+        public string PhoneNumber { get; set; }
     }
 }

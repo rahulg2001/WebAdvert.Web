@@ -30,10 +30,16 @@
                 <input asp-for="ConfirmPassword" class="form-control" />
                 <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
 
-            </div>
+                <div class="checkbox">
+                    <label asp-for="Enable2FA"></label>
+                    <input asp-for="Enable2FA" />
+                </div>
+                <label asp-for="PhoneNumber">Phone Number</label>
+                <input asp-for="PhoneNumber" class="form-control" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
 
-            <button type="submit" class="btn btn-dark">Sign In</button>
-        </form>
+                <button type="submit" class="btn btn-dark">Sign In</button>
+</form>
     </div>
 
 

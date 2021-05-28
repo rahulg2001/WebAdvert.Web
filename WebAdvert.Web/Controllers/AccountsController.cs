@@ -58,6 +58,26 @@ namespace WebAdvert.Web.Controllers
                     var createdUser = await this._userManager.CreateAsync(user, model.Password);
                     if (createdUser.Succeeded)
                     {
+                        if (model.Enable2FA)
+                        {
+                            var result = await this._userManager.SetPhoneNumberAsync(user, model.PhoneNumber);
+                            if (result.Succeeded)
+                            {
+                                //Enable Two Factor authentication for the user
+                                result = await this._userManager.SetTwoFactorEnabledAsync(user, model.Enable2FA);
+                                if (result.Succeeded)
+                                {
+                                    return RedirectToAction("Confirm");
+                                }
+                            }
+                            else
+                            {
+                                //invalid phone number
+                                ModelState.AddModelError("Signup error", "invalid phone number");
+                                return View();
+                            }
+
+                        }
                         return RedirectToAction("Confirm");
                     }
                 }
@@ -127,6 +147,11 @@ namespace WebAdvert.Web.Controllers
                 {
                     return RedirectToAction("Index", "Home");
                 }
+                if (result.RequiresTwoFactor)
+                {
+                    //To change
+                    return RedirectToAction("ConfirmMFA");
+                }
                 else
                 {
                     ModelState.AddModelError("Login error", "Email and password no not match");
@@ -187,13 +212,11 @@ namespace WebAdvert.Web.Controllers
                 }
                 else
                 {
-
                     //var result = await _userManager.ConfirmEmailAsync(user, model.Code);
                     var result = await (_userManager as CognitoUserManager<CognitoUser>).ResetPasswordAsync(user, model.Code, model.Password );
                     if (result.Succeeded)
                     {
                         return RedirectToAction("Login");
-
                     }
                     {
                         foreach (var item in result.Errors)
@@ -202,6 +225,46 @@ namespace WebAdvert.Web.Controllers
                         }
                         return View(model);
                     }
+                }
+            }
+            return View();
+        }
+
+
+        public IActionResult ConfirmMFA(LoginWithMFAModel model)
+        {
+            return View(model);
+        }
+
+        [HttpPost]
+        [ActionName("ConfirmMFA")]
+        public async Task<IActionResult> ConfirmMFAPost(LoginWithMFAModel model)
+        {
+            //Reference:
+            //https://github.com/aws/aws-aspnet-cognito-identity-provider/blob/master/samples/Samples/Areas/Identity/Pages/Account/LoginWith2fa.cshtml.cs
+
+            if (ModelState.IsValid)
+            {
+                var user = await this._signInManager.GetTwoFactorAuthenticationUserAsync();
+                if (user == null)
+                {
+                    ModelState.AddModelError("UserExists", "User not found");
+                    return View(model);
+                }
+                else
+                {
+
+                    var cognitoSignInManager = this._signInManager as CognitoSignInManager<CognitoUser>;
+                    var result = await cognitoSignInManager.RespondToTwoFactorChallengeAsync(model.MFACode, false, false);                  //var result = await this._signInManager.TwoFactorAuthenticatorSignInAsync(model.MFACode, false, false);
+                    if (result.Succeeded)
+                    {
+                        return RedirectToAction("Index", "Home");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("Login error", "MFA failed");
+                    }
+
                 }
             }
             return View();
